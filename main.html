@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+  <body>
+    <script>
+      window.onload = function () {
+        const isSetup = localStorage.getItem("ollama-setup-complete");
+        if (!isSetup) {
+          location.href = "setup.html";
+        } else {
+          location.href = "chat.html";
+        }
+      };
+    </script>
+  </body>
+</html>

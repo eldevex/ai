@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Настройки - Ollama AI</title>
+  
+  <!-- Android Bridge -->
+  <script src="file:///android_asset/android.js"></script>
+  
+  <!-- Onsen UI -->
+  <link rel="stylesheet" href="onsen/onsenui.css">
+  <link rel="stylesheet" href="onsen/onsen-css-components.min.css">
+  <script src="onsen/onsenui.min.js"></script>
+  
+  <!-- jQuery -->
+  <script src="jq.js"></script>
+  
+  <!-- Custom Theme -->
+  <link rel="stylesheet" href="theme.css">
+  
+  <!-- Modules -->
+  <script src="chat_theme.js"></script>
+  <script src="chat_system_prompt.js"></script>
+  <script src="chat_sessions.js"></script>
+  
+  <!-- Settings Modules (порядок важен!) -->
+  <script src="settings/settings_vars.js"></script>
+  <script src="settings/settings_css.js"></script>
+  <script src="settings/settings_ui.js"></script>
+  <script src="settings/settings_api.js"></script>
+  <script src="settings/settings_prompt.js"></script>
+  <script src="settings/settings_export_core.js"></script>
+  <script src="settings/settings_export_dialog.js"></script>
+  <script src="settings/settings_import_processor.js"></script>
+  <script src="settings/settings_export_import.js"></script>
+  <script src="settings/settings_cache.js"></script>
+
+  <script src="settings/settings_legacy.js"></script>
+  <script src="settings/settings_main.js"></script>
+</head>
+<body>
+
+  <ons-page id="settingsPage">
+    <ons-toolbar>
+      <div class="left">
+        <ons-back-button onclick="goBack()">Назад</ons-back-button>
+      </div>
+      <div class="center">Настройки</div>
+    </ons-toolbar>
+    
+    <div class="settings-container">
+      
+      <!-- Секция: API Настройки -->
+      <div class="settings-section">
+        <div class="settings-header" onclick="toggleSection('api')">
+          <div class="settings-header-left">
+            <ons-icon icon="md-settings" class="settings-icon"></ons-icon>
+            <span>Настройки API</span>
+          </div>
+          <ons-icon icon="md-chevron-down" class="settings-chevron" id="chevron-api"></ons-icon>
+        </div>
+        <div class="settings-content" id="content-api">
+          <div class="settings-field">
+            <label class="settings-label">Ollama API Key</label>
+            <ons-input id="settingsApiKey" modifier="underbar" type="text" 
+              placeholder="Введите API ключ" style="width:100%">
+            </ons-input>
+          </div>
+          <div class="settings-field">
+            <label class="settings-label">API Host</label>
+            <ons-input id="settingsApiHost" modifier="underbar" type="text" 
+              placeholder="https://api.ollama.com" style="width:100%">
+            </ons-input>
+          </div>
+          <ons-button modifier="large" onclick="saveApiSettings()" class="settings-save-btn">
+            Сохранить API настройки
+          </ons-button>
+        </div>
+      </div>
+      
+      <!-- Секция: Системный промпт -->
+      <div class="settings-section">
+        <div class="settings-header" onclick="toggleSection('prompt')">
+          <div class="settings-header-left">
+            <ons-icon icon="md-settings-square" class="settings-icon"></ons-icon>
+            <span>Системный промпт</span>
+          </div>
+          <ons-icon icon="md-chevron-down" class="settings-chevron" id="chevron-prompt"></ons-icon>
+        </div>
+        <div class="settings-content" id="content-prompt">
+          <div class="settings-toggle-row">
+            <span class="settings-label">Активировать системный промпт</span>
+            <ons-switch id="settingsPromptToggle" onchange="onPromptToggle()"></ons-switch>
+          </div>
+          <div class="settings-field">
+            <label class="settings-label">Текст промпта</label>
+            <textarea id="settingsPromptText" class="settings-textarea" 
+              placeholder="Введите инструкции для AI..."
+              oninput="updatePromptPreview()"></textarea>
+          </div>
+          <div class="settings-preview-box" id="promptPreview">
+            <span class="settings-preview-placeholder">Системный промпт отключен — AI будет использовать стандартное поведение</span>
+          </div>
+          <div class="settings-buttons-row">
+            <ons-button modifier="large" onclick="savePromptSettings()" style="flex:1;">
+              Сохранить
+            </ons-button>
+            <ons-button onclick="resetPromptSettings()" style="background:var(--bg-tertiary);color:var(--text-secondary);">
+              Сбросить
+            </ons-button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Секция: Экспорт и импорт -->
+      <div class="settings-section">
+        <div class="settings-header" onclick="toggleSection('export')">
+          <div class="settings-header-left">
+            <ons-icon icon="md-import-export" class="settings-icon"></ons-icon>
+            <span>Экспорт и импорт</span>
+          </div>
+          <ons-icon icon="md-chevron-down" class="settings-chevron" id="chevron-export"></ons-icon>
+        </div>
+        <div class="settings-content" id="content-export">
+          
+          <!-- Экспорт/импорт чатов -->
+          <div class="export-subsection">
+            <label class="settings-label" style="display:flex;align-items:center;gap:8px;">
+              <ons-icon icon="md-comments" style="color:var(--accent-color)"></ons-icon>
+              Чаты и история
+            </label>
+            <div class="settings-buttons-row" style="margin-top:12px;">
+              <ons-button modifier="large" onclick="exportChats()" class="settings-action-btn" style="flex:1;">
+                <ons-icon icon="md-download" style="margin-right:8px;"></ons-icon>
+                Экспорт
+              </ons-button>
+              <ons-button modifier="large" onclick="importChats()" class="settings-action-btn secondary" style="flex:1;">
+                <ons-icon icon="md-upload" style="margin-right:8px;"></ons-icon>
+                Импорт
+              </ons-button>
+            </div>
+          </div>
+          
+          <div class="export-divider"></div>
+          
+          <!-- Экспорт/импорт настроек -->
+          <div class="export-subsection">
+            <label class="settings-label" style="display:flex;align-items:center;gap:8px;">
+              <ons-icon icon="md-settings" style="color:var(--accent-color)"></ons-icon>
+              Настройки приложения
+            </label>
+            <div class="settings-buttons-row" style="margin-top:12px;">
+              <ons-button modifier="large" onclick="exportSettings()" class="settings-action-btn" style="flex:1;">
+                <ons-icon icon="md-download" style="margin-right:8px;"></ons-icon>
+                Экспорт
+              </ons-button>
+              <ons-button modifier="large" onclick="importSettings()" class="settings-action-btn secondary" style="flex:1;">
+                <ons-icon icon="md-upload" style="margin-right:8px;"></ons-icon>
+                Импорт
+              </ons-button>
+            </div>
+          </div>
+          <!-- Кнопка открыть папку (только для Android 11+) -->
+<div class="export-subsection" id="openFolderSection" style="margin-top:16px; display:none;">
+  <ons-button modifier="large" onclick="openBackupFolderFromSettings()" style="width:100%;background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border-color);">
+    <ons-icon icon="md-folder" style="margin-right:8px;"></ons-icon>
+    <span id="openFolderBtnText">Открыть папку с бэкапами</span>
+  </ons-button>
+  <p class="settings-hint" id="backupPathHint" style="margin-top:8px;text-align:center;">
+    Загрузка информации о пути...
+  </p>
+</div>
+
+          
+        </div>
+      </div>
+            <!-- Секция: Кеш -->
+      <div class="settings-section">
+        <div class="settings-header" onclick="toggleSection('cache')">
+          <div class="settings-header-left">
+            <ons-icon icon="md-storage" class="settings-icon"></ons-icon>
+            <span>Управление кешем</span>
+          </div>
+          <ons-icon icon="md-chevron-down" class="settings-chevron" id="chevron-cache"></ons-icon>
+        </div>
+        <div class="settings-content" id="content-cache">
+          
+          <!-- Автоочистка -->
+          <div class="settings-toggle-row">
+            <span class="settings-label">Автоматическая очистка</span>
+            <ons-switch id="cacheAutoCleanupToggle" onchange="onCacheToggle()"></ons-switch>
+          </div>
+          
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px;margin-top:-8px;">
+            Проверка выполняется автоматически каждую минуту
+          </p>
+          
+          <!-- Возраст файлов -->
+          <div class="settings-select-row">
+            <label class="settings-label">Удалять файлы старше</label>
+            <select id="cacheMaxAgeSelect" class="settings-select">
+              <option value="60000">1 минута</option>
+              <option value="300000">5 минут</option>
+              <option value="900000">15 минут</option>
+              <option value="1800000">30 минут</option>
+              <option value="3600000">1 час</option>
+              <option value="7200000">2 часа</option>
+              <option value="10800000">3 часа</option>
+              <option value="14400000">4 часа</option>
+              <option value="18000000">5 часов</option>
+              <option value="21600000">6 часов</option>
+              <option value="25200000">7 часов</option>
+              <option value="28800000">8 часов</option>
+              <option value="32400000">9 часов</option>
+              <option value="36000000">10 часов</option>
+              <option value="43200000">12 часов</option>
+              <option value="86400000">1 день</option>
+              <option value="172800000">2 дня</option>
+              <option value="259200000">3 дня</option>
+              <option value="345600000">4 дня</option>
+              <option value="432000000">5 дней</option>
+              <option value="518400000">6 дней</option>
+              <option value="604800000">7 дней (1 неделя)</option>
+            </select>
+          </div>
+          
+          <ons-button modifier="large" onclick="saveCacheSettings()" class="settings-save-btn">
+            Сохранить настройки кеша
+          </ons-button>
+          
+          <!-- Информация о кеше -->
+          <div class="cache-info-card" id="cacheInfoCard" style="margin-top:20px;">
+            <div class="cache-info-row">
+              <span class="cache-info-label">Файлов в кеше:</span>
+              <span class="cache-info-value" id="cacheFileCount">-</span>
+            </div>
+            <div class="cache-info-row">
+              <span class="cache-info-label">Общий размер:</span>
+              <span class="cache-info-value" id="cacheSize">-</span>
+            </div>
+            <div class="cache-info-row">
+              <span class="cache-info-label">Самый старый файл:</span>
+              <span class="cache-info-value" id="cacheOldest">-</span>
+            </div>
+          </div>
+          
+          <ons-button modifier="large" onclick="refreshCacheInfo()" class="settings-action-btn secondary">
+            <ons-icon icon="md-refresh"></ons-icon> Обновить информацию
+          </ons-button>
+          <ons-button modifier="large" onclick="clearCacheNow()" class="settings-action-btn danger">
+            <ons-icon icon="md-delete"></ons-icon> Очистить кеш сейчас
+          </ons-button>
+          
+          <p class="settings-hint">
+            💡 При включенной автоочистке файлы удаляются автоматически при превышении указанного возраста из папок: cache, IndexedDB, BrowserMetrics.
+          </p>
+        </div>
+      </div>
+
+      <!-- Секция: О приложении -->
+      <div class="settings-section">
+        <div class="settings-header" onclick="toggleSection('about')">
+          <div class="settings-header-left">
+            <ons-icon icon="md-info" class="settings-icon"></ons-icon>
+            <span>О приложении</span>
+          </div>
+          <ons-icon icon="md-chevron-down" class="settings-chevron" id="chevron-about"></ons-icon>
+        </div>
+        <div class="settings-content" id="content-about">
+          <div class="about-content">
+            <h3>🤖 Ollama AI Chat</h3>
+            <p>Версия: 1.0.0</p>
+            <p>Клиент для работы с Ollama API</p>
+            <p style="margin-top:16px;color:var(--text-muted);">
+              Поддерживаемые модели: Qwen, Gemini, Kimi, DeepSeek, Gemma и другие
+            </p>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+  </ons-page>
+
+  <script>
+    // Обновляем текст кнопки и подсказку о пути в зависимости от версии Android
+    // Обновляем текст кнопки и подсказку о пути в зависимости от версии Android
+function updateBackupPathInfo() {
+  const apiLevel = getAndroidApiLevel();
+  const pathHint = document.getElementById("backupPathHint");
+  const btnText = document.getElementById("openFolderBtnText");
+  const folderSection = document.getElementById("openFolderSection");
+  
+  if (apiLevel >= 30) {
+    // Android 11+ — показываем кнопку
+    if (folderSection) folderSection.style.display = "block";
+    if (pathHint) pathHint.innerHTML = "Папка: <b>Android/data/ollama.bober.eldevex/files/Backups/</b>";
+    if (btnText) btnText.textContent = "Открыть папку с бэкапами";
+  } else {
+    // Android 10 и ниже — скрываем кнопку, показываем только путь
+    if (folderSection) folderSection.style.display = "none";
+    // Можно добавить отдельную подсказку для Android 10-
+    // или просто оставить секцию скрытой полностью
+  }
+}
+
+    
+    // Вызываем после инициализации страницы
+    document.addEventListener("DOMContentLoaded", function() {
+      setTimeout(updateBackupPathInfo, 100);
+    });
+  </script>
+  <!-- Диалог выбора бэкапа для Android 11+ -->
+  <div id="backupPickerModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:99999;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;">
+    <div style="background:var(--bg-secondary);border-radius:16px;width:100%;max-width:400px;max-height:80vh;display:flex;flex-direction:column;border:1px solid var(--border-color);">
+      <div style="padding:20px;border-bottom:1px solid var(--border-color);">
+        <h3 style="margin:0;color:var(--text-primary);font-size:18px;">Выберите бэкап</h3>
+        <p style="margin:8px 0 0 0;font-size:13px;color:var(--text-secondary);" id="pickerSubtitle">Найденные файлы:</p>
+      </div>
+      <div id="backupFileList" style="overflow-y:auto;max-height:50vh;padding:8px;">
+        <!-- Сюда вставляется список файлов -->
+      </div>
+      <div style="padding:16px;border-top:1px solid var(--border-color);display:flex;gap:10px;">
+        <ons-button modifier="large" onclick="closeBackupPicker()" style="flex:1;background:var(--bg-tertiary);color:var(--text-primary);">
+          Отмена
+        </ons-button>
+        <ons-button modifier="large" onclick="importViaFileInputFallback()" style="flex:1;">
+          📁 С устройства
+        </ons-button>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

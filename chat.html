@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Ollama AI</title>
+  
+  <!-- Android Bridge -->
+  <script src="file:///android_asset/android.js"></script>
+  
+  <!-- External Libraries -->
+  <script src="jszip.min.js"></script>
+  <!-- PDF.js для обработки PDF файлов -->
+  <script src="pdf.min.js"></script>
+  <script>
+    // Настройка PDF.js worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  </script>
+
+  <!-- Tesseract.js для OCR -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+  <!-- mammoth.js для чтения DOCX файлов -->
+  <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+  
+  <!-- Onsen UI -->
+  <link rel="stylesheet" href="onsen/onsenui.css">
+  <link rel="stylesheet" href="onsen/onsen-css-components.min.css">
+  <script src="onsen/onsenui.min.js"></script>
+  
+  <!-- jQuery -->
+  <script src="jq.js"></script>
+  
+  <!-- Custom Theme -->
+  <link rel="stylesheet" href="theme.css">
+  
+    <!-- Chat Modules (порядок важен!) -->
+  <script src="chat_theme.js"></script>
+  <script src="chat_swipe.js"></script>
+  <script src="chat_sessions.js"></script>
+  <script src="chat_models.js"></script>
+  <script src="chat_files.js"></script>
+  <script src="chat_ocr.js"></script>
+  <script src="chat_docx.js"></script>
+  <script src="chat_websearch.js"></script>
+  <script src="chat_system_prompt.js"></script>
+  <script src="chat_research.js"></script> <!-- НОВЫЙ МОДУЛЬ -->
+  <script src="chat_cache.js"></script>
+
+  <script src="chat.js"></script>
+
+</head>
+<body>
+
+  <ons-splitter>
+    <!-- Sidebar Menu -->
+    <ons-splitter-side id="menu" side="left" width="320px" collapse swipeable>
+      <ons-page>
+        <div class="menu-header">
+          <div class="menu-header-top">
+            <h3>🤖 Ollama AI</h3>
+            <button class="theme-toggle-icon-btn" onclick="toggleTheme()" title="Сменить тему">
+              <span id="themeIconHeader">🌙</span>
+            </button>
+          </div>
+        </div>
+        
+        <div class="new-chat-btn" onclick="createNewChat()">
+          <ons-icon icon="md-plus"></ons-icon> Новый чат
+        </div>
+        
+        <div class="menu-section">
+          <div class="menu-section-title">История чатов</div>
+          <div id="chatHistoryList" style="max-height:350px;overflow-y:auto">
+            <!-- Чаты загружаются динамически -->
+          </div>
+        </div>
+        
+        <ons-list>
+          <ons-list-item onclick="showModels()" tappable>
+            <ons-icon icon="md-cast" style="margin-right:15px"></ons-icon>
+            <div class="center">
+              <div>Выбрать модель &nbsp;</div>
+              <div id="menuCurrentModel" style="font-size:12px;color:var(--text-secondary);"> qwen3-coder</div>
+            </div>
+            <div class="right">
+              <ons-icon icon="md-chevron-right" style="color:var(--text-muted)"></ons-icon>
+            </div>
+          </ons-list-item>
+          <ons-list-item onclick="openSettings()" tappable>
+            <ons-icon icon="md-settings" style="margin-right:15px"></ons-icon>
+            <div class="center">
+              <div>Настройки</div>
+            </div>
+            <div class="right">
+              <ons-icon icon="md-chevron-right" style="color:var(--text-muted)"></ons-icon>
+            </div>
+          </ons-list-item>
+          <ons-list-item onclick="deleteAllChats()" tappable modifier="tappable">
+            <ons-icon icon="md-delete" style="margin-right:15px;color:var(--danger-color)"></ons-icon>
+            <span style="color:var(--danger-color)">Удалить все чаты</span>
+          </ons-list-item>
+        </ons-list>
+      </ons-page>
+    </ons-splitter-side>
+    
+    <!-- Main Content -->
+    <ons-splitter-content>
+      <ons-page>
+        <ons-toolbar>
+          <div class="left">
+            <ons-toolbar-button onclick="fn.open()">
+              <ons-icon icon="md-menu"></ons-icon>
+            </ons-toolbar-button>
+          </div>
+          <div class="center" id="toolbarTitle">Ollama AI Chat</div>
+          <div class="right toolbar-right-group">
+            <!-- Кнопка исследовательского режима (слева от системного промпта) -->
+            <ons-toolbar-button onclick="quickToggleResearchMode()" id="researchBtn" title="Исследовательский режим">
+              <span id="researchIcon" style="font-size:20px;line-height:1;">📚</span>
+              <span id="researchBadge" style="display:none;position:absolute;top:2px;right:2px;width:8px;height:8px;background:var(--success-color);border-radius:50%;"></span>
+            </ons-toolbar-button>
+            
+            <!-- Кнопка быстрого переключения системного промпта -->
+            <!-- Кнопка быстрого переключения системного промпта -->
+<ons-toolbar-button onclick="quickToggleSystemPrompt()" id="quickPromptBtn" title="Системный промпт">
+  <span id="quickPromptIcon" style="font-size:20px;line-height:1;">📢</span>
+  <span id="quickPromptBadge">●</span>
+</ons-toolbar-button>
+
+            <!-- Кнопка новый чат -->
+            <ons-toolbar-button onclick="createNewChat()" title="Новый чат">
+              <ons-icon icon="md-plus"></ons-icon>
+            </ons-toolbar-button>
+          </div>
+        </ons-toolbar>
+        
+        <!-- Бейдж выбора модели -->
+        <div class="model-badge" id="currentModel" onclick="showModels()">qwen3-coder</div>
+        
+        <div class="chat-container" id="chatContainer">
+          <div class="empty-state">
+            <p>Начните диалог...</p>
+          </div>
+        </div>
+        
+        <!-- Attachments Area -->
+        <div id="pendingAttachmentsContainer" class="pending-attachments-container">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <span style="font-size:13px">
+              Вложения <span id="attachmentCount" class="attachment-count">0</span>
+            </span>
+            <span style="cursor:pointer;font-size:12px;display:flex;align-items:center;gap:4px" onclick="clearAttachments()">
+              <ons-icon icon="md-close"></ons-icon> Очистить
+            </span>
+          </div>
+          <div id="pendingAttachments"></div>
+          <div id="imagePreviews"></div>
+        </div>
+        
+        <!-- Input Area -->
+        <div class="input-area" id="inputArea">
+          <input type="file" id="imageInput" class="hidden-input" accept="image/*" multiple onchange="handleImageSelect(this)">
+          <input type="file" id="fileInput" class="hidden-input" accept="*/*" multiple onchange="handleFileSelect(this)">
+          
+          <!-- Кнопка прикрепления слева -->
+          <button class="attach-btn" onclick="showAttachMenu()" title="Прикрепить файл">
+            <ons-icon icon="md-attachment"></ons-icon>
+          </button>
+          
+          <!-- Кнопка поиска (глобус) слева от поля -->
+          <button class="search-btn" id="searchBtn" onclick="toggleSearch()" title="Веб-поиск">
+            <span class="search-emoji">🌐</span>
+            <span class="search-badge" id="searchBadge" style="display:none">●</span>
+          </button>
+          
+          <!-- Поле ввода по центру -->
+          <input type="text" class="message-input" id="messageInput" placeholder="Сообщение..." onkeypress="handleKeyPress(event)" autocomplete="off">
+          
+          <!-- Кнопка отправки справа -->
+          <button class="send-btn" onclick="sendMessage()" title="Отправить">
+            <span class="send-emoji">🚀</span>
+          </button>
+        </div>
+      </ons-page>
+    </ons-splitter-content>
+  </ons-splitter>
+  
+  <!-- Attachment Action Sheet -->
+  <ons-action-sheet id="attachSheet" cancelable>
+    <ons-action-sheet-button onclick="selectImage()" icon="md-image">
+      <span>Фото из галереи</span>
+    </ons-action-sheet-button>
+    <ons-action-sheet-button onclick="selectAnyFile()" icon="md-file">
+      <span>Файл или архив</span>
+    </ons-action-sheet-button>
+    <ons-action-sheet-button onclick="hideAttachMenu()" icon="md-close">
+      <span style="color:var(--danger-color)">Отмена</span>
+    </ons-action-sheet-button>
+  </ons-action-sheet>
+  
+  <!-- Models Dialog -->
+  <ons-dialog id="modelsDialog" cancelable>
+    <div style="padding:20px;max-height:70vh;overflow-y:auto">
+      <h4 style="margin-bottom:16px">Выберите модель</h4>
+      <div id="modelsList"></div>
+    </div>
+  </ons-dialog>
+  
+  <!-- Rename Dialog -->
+  <ons-dialog id="renameDialog" cancelable>
+    <div style="padding:24px">
+      <h4 style="margin-bottom:20px">Переименовать чат</h4>
+      <ons-input id="newChatName" modifier="underbar" type="text" 
+        placeholder="Новое название" 
+        style="width:100%;margin-bottom:24px" float>
+      </ons-input>
+      <ons-button modifier="large" onclick="confirmRename()">
+        Сохранить
+      </ons-button>
+    </div>
+  </ons-dialog>
+</body>
+</html>

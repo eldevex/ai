@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<head>
+  <title>Ollama AI Setup</title>
+  <script src="file:///android_asset/android.js"></script>
+  <link rel="stylesheet" href="onsen/onsenui.css">
+  <link rel="stylesheet" href="onsen/onsen-css-components.min.css">
+  <script src="onsen/onsenui.min.js"></script>
+  <script src="jq.js"></script>
+  <script src="setup.js"></script>
+  <meta charset="UTF-8">
+</head>
+<body>
+  <ons-page>
+    <div style="text-align: center; margin: 20% auto; max-width: 90%">
+      <h2>🤖 Ollama AI Chat</h2>
+      <p>Настройте доступ к API перед началом работы</p>
+      
+      <ons-input id="ollamaKey" modifier="underbar" type="text" 
+        placeholder="Ollama API Key" style="width: 100%; margin-top: 20px" float>
+      </ons-input>
+      
+      <ons-input id="ollamaHost" modifier="underbar" type="text" 
+        placeholder="https://api.ollama.com" style="width: 100%; margin-top: 15px" float>
+      </ons-input>
+      
+      <p style="margin-top: 30px">
+        <ons-button modifier="large" onclick="saveSetup()">Продолжить</ons-button>
+      </p>
+    </div>
+  </ons-page>
+</body>
+</html>
